@@ -145,8 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const rawText = inputText.value;
     const threshold = parseFloat(thresholdInput.value) || 0.8;
     
-    const modeRadio = document.querySelector('input[name="dbMode"]:checked');
-    const selectedMode = modeRadio ? modeRadio.value : 'both';
+    const dbModeRadio = document.querySelector('input[name="dbMode"]:checked');
+    const selectedDbMode = dbModeRadio ? dbModeRadio.value : 'both';
+
+    const outputModeRadio = document.querySelector('input[name="outputMode"]:checked');
+    const selectedOutputMode = outputModeRadio ? outputModeRadio.value : 'translate';
 
     if (!rawText.trim()) {
       resultsDiv.innerHTML = '<em>Please enter text above.</em>';
@@ -156,15 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const hasPIE = typeof PIE_DICTIONARY !== 'undefined';
     const hasLatin = typeof LATIN_DICTIONARY !== 'undefined';
 
-    if (selectedMode === 'pie' && !hasPIE) {
+    if (selectedDbMode === 'pie' && !hasPIE) {
       resultsDiv.innerHTML = '<strong style="color:red;">Error: PIE_DICTIONARY is not loaded.</strong>';
       return;
     }
-    if (selectedMode === 'latin' && !hasLatin) {
+    if (selectedDbMode === 'latin' && !hasLatin) {
       resultsDiv.innerHTML = '<strong style="color:red;">Error: LATIN_DICTIONARY is not loaded.</strong>';
       return;
     }
-    if (selectedMode === 'both' && !hasPIE && !hasLatin) {
+    if (selectedDbMode === 'both' && !hasPIE && !hasLatin) {
       resultsDiv.innerHTML = '<strong style="color:red;">Error: Neither PIE_DICTIONARY nor LATIN_DICTIONARY is loaded.</strong>';
       return;
     }
@@ -186,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const stem = getStem(cleanWord);
         let matchedTranslation = null;
 
-        if (selectedMode === 'pie') {
+        if (selectedDbMode === 'pie') {
           const res = findBestMatch(cleanWord, stem, PIE_DICTIONARY, threshold);
           if (res.bestValue) matchedTranslation = res.bestValue;
-        } else if (selectedMode === 'latin') {
+        } else if (selectedDbMode === 'latin') {
           const res = findBestMatch(cleanWord, stem, LATIN_DICTIONARY, threshold);
           if (res.bestValue) matchedTranslation = res.bestValue;
-        } else if (selectedMode === 'both') {
+        } else if (selectedDbMode === 'both') {
           const pieRes = hasPIE ? findBestMatch(cleanWord, stem, PIE_DICTIONARY, threshold) : { bestValue: null };
           const latinRes = hasLatin ? findBestMatch(cleanWord, stem, LATIN_DICTIONARY, threshold) : { bestValue: null };
 
@@ -207,9 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Apply pickle_surprise directly when a match is found
+        // Apply QRNG only if 'qrng' mode is selected
         if (matchedTranslation) {
-          return await pickle_surprise(matchedTranslation, 0.5);
+          if (selectedOutputMode === 'qrng') {
+            return await pickle_surprise(matchedTranslation, 0.5);
+          }
+          return matchedTranslation;
         }
 
         return token;
@@ -224,3 +230,4 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsDiv.innerHTML = `<p style="font-size: 1.1rem; line-height: 1.6;">${translatedSentence}</p>`;
   });
 });
+  
