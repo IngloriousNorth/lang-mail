@@ -84,10 +84,17 @@
   <div class="controls">
     <button id="scanBtn">Pen</button>
 
+    <!-- Dictionary Selection -->
     <div class="radio-group">
       <label><input type="radio" name="dbMode" value="pie"> PIE</label>
       <label><input type="radio" name="dbMode" value="latin"> Latin</label>
       <label><input type="radio" name="dbMode" value="both" checked> Both</label>
+    </div>
+
+    <!-- Output Processing Mode (Translate vs QRNG) -->
+    <div class="radio-group">
+      <label><input type="radio" name="outputMode" value="translate" checked> Translate Only</label>
+      <label><input type="radio" name="outputMode" value="qrng"> QRNG String</label>
     </div>
 
     <label>
@@ -100,13 +107,11 @@
     <em>Awaiting your Pen...</em>
   </div>
 
-  <!-- Compromise.js NLP suffix parser -->
+  <!-- Scripts -->
   <script src="./PorterStemmer1980.min.js"></script>
-  <!-- Generated datasets -->
   <script src="./pickle-surprise.js"></script>
   <script src="./pie.js"></script>
   <script src="./latin.js"></script>
-  <!-- Application processing logic -->
   <script src="./app.js"></script>
 </body>
 </html>
