@@ -10,5 +10,7 @@ I develop my Metaphysics of the Mind-Body problem into a Heraclitan Quantum-AI, 
 
 Thus we cut against two prevailing preconceptions in the AI field:
 1) Natural Language Processing (NLP) is an encapsulated "module," so that in order for a computer to process language significantly, it must have built-in syntactical constructs and an NLP-bank.
-2) NLP inheres solely in the ***spatial**, and not ***Temporal*** weights.
+2) NLP inheres solely in the **spatial**, and not ***Temporal*** weights.
+
+It is plainly obvious to the early student of neuroscience, familiar with only a bit of Metaphysics, that even something so "simple" as the action-potential, inheres in the temporal, and not necessarily spatial, weights inherent in a bioelectrical... signal.
    
