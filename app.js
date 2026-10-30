@@ -74,51 +74,8 @@ function getStem(word) {
   return word;
 }
 
-function findBestMatch(word, stem, dictionary, threshold) {
-  if (!dictionary) return { bestValue: null, highestScore: 0 };
-
-  const keys = Object.keys(dictionary);
-  let bestValue = null;
-  let highestScore = 0;
-
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    let score = jaroWinkler(word, key);
-
-    if (score < threshold && word.length > 4) {
-      const stemScore = jaroWinkler(stem, key);
-      score = Math.max(score, stemScore);
-    }
-
-    if (score >= threshold && score > highestScore) {
-      highestScore = score;
-      bestValue = dictionary[key];
-    }
-  }
-
-  return { bestValue, highestScore };
-}
-
 /**
- * 1) Select initially an ARR[] of English words/keys from the pie/latin stems
- */
-function getPovStemsArray() {
-  let arr = [];
-  if (typeof PIE_DICTIONARY !== 'undefined') {
-    arr = arr.concat(Object.keys(PIE_DICTIONARY));
-  }
-  if (typeof LATIN_DICTIONARY !== 'undefined') {
-    arr = arr.concat(Object.keys(LATIN_DICTIONARY));
-  }
-  // Fallback if dictionaries are not loaded
-  if (arr.length === 0 && typeof TOP_SHARED_ENGLISH_WORDS !== 'undefined') {
-    arr = TOP_SHARED_ENGLISH_WORDS;
-  }
-  return arr;
-}
-
-/**
- * 2) Query val.town proxy to fetch the QRNG mod number
+ * Query val.town proxy to fetch the QRNG mod number
  */
 async function fetchModNumber() {
   try {
@@ -132,26 +89,39 @@ async function fetchModNumber() {
 }
 
 /**
- * pickle_surprise
- * Uses ARR[QRNG % arr.len] to select a word and prepend it if chance passes
+ * Returns an array of matching translation values whose score meets or exceeds the threshold
  */
-async function pickle_surprise(translatedToken, chance = 0.5) {
-  if (!translatedToken || Math.random() > chance) {
-    return translatedToken;
+function findAllMatches(word, stem, dictionary, threshold) {
+  if (!dictionary) return [];
+
+  const keys = Object.keys(dictionary);
+  let matches = [];
+
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    let score = jaroWinkler(word, key);
+
+    if (score < threshold && word.length > 4) {
+      const stemScore = jaroWinkler(stem, key);
+      score = Math.max(score, stemScore);
+    }
+
+    if (score >= threshold) {
+      matches.push(dictionary[key]);
+    }
   }
 
-  const arr = getPovStemsArray();
+  return matches;
+}
 
-  if (arr.length === 0) {
-    console.warn('pickle_surprise: ARR is empty or unavailable.');
-    return translatedToken;
-  }
-
+/**
+ * Quantum selection algorithm: arr[QRNG % arr.length]
+ */
+async function quantumSelect(arr) {
+  if (!arr || arr.length === 0) return null;
   const qrng = await fetchModNumber();
-  const qrngIndex = Math.abs(qrng) % arr.length;
-  const qrngWord = arr[qrngIndex];
-
-  return `${qrngWord} ${translatedToken}`;
+  const index = Math.abs(qrng) % arr.length;
+  return arr[index];
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -166,9 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const dbModeRadio = document.querySelector('input[name="dbMode"]:checked');
     const selectedDbMode = dbModeRadio ? dbModeRadio.value : 'both';
-
-    const outputModeRadio = document.querySelector('input[name="outputMode"]:checked');
-    const selectedOutputMode = outputModeRadio ? outputModeRadio.value : 'translate';
 
     if (!rawText.trim()) {
       resultsDiv.innerHTML = '<em>Please enter text above.</em>';
@@ -206,35 +173,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const stem = getStem(cleanWord);
-        let matchedTranslation = null;
+        let candidateMatches = [];
 
         if (selectedDbMode === 'pie') {
-          const res = findBestMatch(cleanWord, stem, PIE_DICTIONARY, threshold);
-          if (res.bestValue) matchedTranslation = res.bestValue;
+          candidateMatches = findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold);
         } else if (selectedDbMode === 'latin') {
-          const res = findBestMatch(cleanWord, stem, LATIN_DICTIONARY, threshold);
-          if (res.bestValue) matchedTranslation = res.bestValue;
+          candidateMatches = findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold);
         } else if (selectedDbMode === 'both') {
-          const pieRes = hasPIE ? findBestMatch(cleanWord, stem, PIE_DICTIONARY, threshold) : { bestValue: null };
-          const latinRes = hasLatin ? findBestMatch(cleanWord, stem, LATIN_DICTIONARY, threshold) : { bestValue: null };
-
-          if (pieRes.bestValue && latinRes.bestValue) {
-            const num = await fetchModNumber();
-            const wordMod = Math.abs(num) % 2;
-            matchedTranslation = wordMod === 1 ? pieRes.bestValue : latinRes.bestValue;
-          } else if (pieRes.bestValue) {
-            matchedTranslation = pieRes.bestValue;
-          } else if (latinRes.bestValue) {
-            matchedTranslation = latinRes.bestValue;
-          }
+          const pieMatches = hasPIE ? findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold) : [];
+          const latinMatches = hasLatin ? findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold) : [];
+          candidateMatches = pieMatches.concat(latinMatches);
         }
 
-        // Apply QRNG only if 'qrng' mode is selected
-        if (matchedTranslation) {
-          if (selectedOutputMode === 'qrng') {
-            return await pickle_surprise(matchedTranslation, 0.5);
+        // If we found matching candidates, apply your quantum algorithm: arr[QRNG % arr.length]
+        if (candidateMatches.length > 0) {
+          const selectedTranslation = await quantumSelect(candidateMatches);
+          if (selectedTranslation) {
+            return selectedTranslation;
           }
-          return matchedTranslation;
         }
 
         return token;
