@@ -9,6 +9,6 @@ There is a debate in neurolinguistics about whether human Language Processing is
 I develop my Metaphysics of the Mind-Body problem into a Heraclitan Quantum-AI, of Scaffolding Temporal Structures. 
 
 Thus we cut against two prevailing preconceptions in the AI field:
-1) Natural Language Processing (NLP) is an encapsulated "module," so that in order for a computer to process language significantly, it must have built-in syntactical constructs and
+1) Natural Language Processing (NLP) is an encapsulated "module," so that in order for a computer to process language significantly, it must have built-in syntactical constructs and an NLP-bank.
 2) NLP inheres solely in the ***spatial**, and not ***Temporal*** weights.
    
