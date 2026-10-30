@@ -75,16 +75,26 @@ function getStem(word) {
 }
 
 /**
- * Query val.town proxy to fetch the QRNG mod number
+ * Query val.town proxy with a length parameter to fetch a batch of QRNG numbers at once
  */
-async function fetchModNumber() {
+async function fetchBatchModNumbers(count = 10) {
   try {
-    const response = await fetch('https://selapian--2f58e6388fb311f1b0781607ee4eb77e.web.val.run/');
+    const response = await fetch(`https://selapian--2f58e6388fb311f1b0781607ee4eb77e.web.val.run/?length=${count}`);
     const data = await response.json();
-    return typeof data.number === 'number' ? data.number : Math.floor(Math.random() * 10000);
+    
+    // Assuming your Val.Town proxy returns an array of numbers when 'length' is provided,
+    // or falls back to generating an array if it returns a single object.
+    if (Array.isArray(data.numbers)) {
+      return data.numbers;
+    } else if (typeof data.number === 'number') {
+      return [data.number];
+    }
+    
+    // Fallback array of pseudo-random numbers if format differs
+    return Array.from({ length: count }, () => Math.floor(Math.random() * 10000));
   } catch (err) {
-    console.warn('Endpoint fetch failed, defaulting to random number:', err);
-    return Math.floor(Math.random() * 10000);
+    console.warn('Batch endpoint fetch failed, defaulting to random numbers:', err);
+    return Array.from({ length: count }, () => Math.floor(Math.random() * 10000));
   }
 }
 
@@ -117,10 +127,24 @@ function findAllMatches(word, stem, dictionary, threshold) {
 /**
  * Quantum selection algorithm: arr[QRNG % arr.length]
  */
+/**
+ * Quantum selection algorithm using a batch-fetched QRNG array: arr[QRNG % arr.length]
+ */
 async function quantumSelect(arr) {
   if (!arr || arr.length === 0) return null;
-  const qrng = await fetchModNumber();
-  const index = Math.abs(qrng) % arr.length;
+  
+  // Fetch the batch of QRNG numbers
+  const qrngBatch = await fetchBatchModNumbers(10);
+  
+  if (!qrngBatch || qrngBatch.length === 0) {
+    // Fallback if batch fetch fails
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Pick the first quantum number from the batch (or you can use Math.random() to pick an index from qrngBatch)
+  const qrngValue = qrngBatch[0];
+  
+  const index = Math.abs(qrngValue) % arr.length;
   return arr[index];
 }
 
