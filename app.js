@@ -3,11 +3,11 @@
  */
 const STOP_WORDS = new Set([
   'a', 'an', 'the', 'that', 'there', 'what', 'who', 'where', 'why', 'when', 'how', 'is','and','or','not', 'it',
-  'about', 'above', 'across', 'after', 'at', 'before', 'behind', 'below', 'beside', 
-  'between', 'by', 'concerning', 'considering', 'despite', 'down', 'during', 'except', 
+  'about', 'above', 'across', 'after', 'at', 'behind', 'below', 'beside', 
+  'between', 'by', 'concerning', 'considering', 'despite', 'down', 'during', 
   'for', 'from', 'in', 'inside', 'into', 'like', 'near', 'of', 'off', 'on', 'onto', 
-  'out', 'over', 'past', 'through', 'throughout', 'to', 'toward', 'towards', 'under', 
-  'until', 'unto', 'up', 'upon', 'with', 'without'
+  'out', 'over', 'past', 'to', 'toward', 'towards', 'under', 
+  'until', 'up', 'upon', 'with', 'without'
 ]);
 
 function jaroDistance(s1, s2) {
@@ -99,6 +99,27 @@ function findBestMatch(word, stem, dictionary, threshold) {
   return { bestValue, highestScore };
 }
 
+/**
+ * 1) Select initially an ARR[] of English words/keys from the pie/latin stems
+ */
+function getPovStemsArray() {
+  let arr = [];
+  if (typeof PIE_DICTIONARY !== 'undefined') {
+    arr = arr.concat(Object.keys(PIE_DICTIONARY));
+  }
+  if (typeof LATIN_DICTIONARY !== 'undefined') {
+    arr = arr.concat(Object.keys(LATIN_DICTIONARY));
+  }
+  // Fallback if dictionaries are not loaded
+  if (arr.length === 0 && typeof TOP_SHARED_ENGLISH_WORDS !== 'undefined') {
+    arr = TOP_SHARED_ENGLISH_WORDS;
+  }
+  return arr;
+}
+
+/**
+ * 2) Query val.town proxy to fetch the QRNG mod number
+ */
 async function fetchModNumber() {
   try {
     const response = await fetch('https://selapian--2f58e6388fb311f1b0781607ee4eb77e.web.val.run/');
@@ -112,25 +133,23 @@ async function fetchModNumber() {
 
 /**
  * pickle_surprise
- * Prepends a QRNG word to a translated token if Math.random() passes the threshold
+ * Uses ARR[QRNG % arr.len] to select a word and prepend it if chance passes
  */
 async function pickle_surprise(translatedToken, chance = 0.5) {
   if (!translatedToken || Math.random() > chance) {
     return translatedToken;
   }
 
-  const wordList = typeof TOP_SHARED_ENGLISH_WORDS !== 'undefined' 
-    ? TOP_SHARED_ENGLISH_WORDS 
-    : (window.TOP_SHARED_ENGLISH_WORDS || []);
+  const arr = getPovStemsArray();
 
-  if (wordList.length === 0) {
-    console.warn('pickle_surprise: TOP_SHARED_ENGLISH_WORDS is empty or unavailable.');
+  if (arr.length === 0) {
+    console.warn('pickle_surprise: ARR is empty or unavailable.');
     return translatedToken;
   }
 
-  const num = await fetchModNumber();
-  const qrngIndex = Math.abs(num) % wordList.length;
-  const qrngWord = wordList[qrngIndex];
+  const qrng = await fetchModNumber();
+  const qrngIndex = Math.abs(qrng) % arr.length;
+  const qrngWord = arr[qrngIndex];
 
   return `${qrngWord} ${translatedToken}`;
 }
@@ -230,4 +249,3 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsDiv.innerHTML = `<p style="font-size: 1.1rem; line-height: 1.6;">${translatedSentence}</p>`;
   });
 });
-  
