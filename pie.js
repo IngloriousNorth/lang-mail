@@ -1,12 +1,10 @@
-// Auto-generated PIE dataset extracted from droher/etymology-db
-// Total unique terms: 2239
 const PIE_DICTIONARY = {
   "ad": "adroit",
   "aidh": "aetna",
   "akana": "awn",
   "albʰos": "albion",
   "alg": "alghero",
-  "an": "est",
+  "an": "east",
   "ang": "haunch",
   "apo": "ebb",
   "atta": "dad",
@@ -744,7 +742,7 @@ const PIE_DICTIONARY = {
   "hmeygʰ": "mist",
   "hnebʰ": "nave",
   "hnegʰ": "nail",
-  "hneh": "est",
+  "hneh": "east",
   "hnek": "enough",
   "hner": "north",
   "hnewn": "november",

@@ -82,15 +82,12 @@ async function fetchBatchModNumbers(count = 10) {
     const response = await fetch(`https://selapian--2f58e6388fb311f1b0781607ee4eb77e.web.val.run/?length=${count}`);
     const data = await response.json();
     
-    // Assuming your Val.Town proxy returns an array of numbers when 'length' is provided,
-    // or falls back to generating an array if it returns a single object.
     if (Array.isArray(data.numbers)) {
       return data.numbers;
     } else if (typeof data.number === 'number') {
       return [data.number];
     }
     
-    // Fallback array of pseudo-random numbers if format differs
     return Array.from({ length: count }, () => Math.floor(Math.random() * 10000));
   } catch (err) {
     console.warn('Batch endpoint fetch failed, defaulting to random numbers:', err);
@@ -125,25 +122,10 @@ function findAllMatches(word, stem, dictionary, threshold) {
 }
 
 /**
- * Quantum selection algorithm: arr[QRNG % arr.length]
+ * Quantum selection algorithm using an existing batch array: arr[QRNG % arr.length]
  */
-/**
- * Quantum selection algorithm using a batch-fetched QRNG array: arr[QRNG % arr.length]
- */
-async function quantumSelect(arr) {
+function quantumSelectFromBatch(arr, qrngValue) {
   if (!arr || arr.length === 0) return null;
-  
-  // Fetch the batch of QRNG numbers
-  const qrngBatch = await fetchBatchModNumbers(10);
-  
-  if (!qrngBatch || qrngBatch.length === 0) {
-    // Fallback if batch fetch fails
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-
-  // Pick the first quantum number from the batch (or you can use Math.random() to pick an index from qrngBatch)
-  const qrngValue = qrngBatch[0];
-  
   const index = Math.abs(qrngValue) % arr.length;
   return arr[index];
 }
@@ -184,42 +166,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tokens = rawText.split(/(\s+|[^\w\s]+)/);
 
-    const translatedTokens = await Promise.all(
-      tokens.map(async (token) => {
-        if (!token || /^\s+$/.test(token) || /^[^\w\s]+$/.test(token)) {
-          return token;
-        }
+    // Filter down to the words that actually need quantum selection to know how large a batch to fetch
+    const wordTokens = tokens.filter(t => t && !/^\s+$/.test(t) && !/^[^\w\s]+$/.test(t) && !STOP_WORDS.has(t.toLowerCase()));
 
-        const cleanWord = token.toLowerCase();
+    // 1. CALL THE API EXACTLY ONCE FOR THE ENTIRE BATCH
+    const qrngBatch = await fetchBatchModNumbers(Math.max(wordTokens.length, 1));
+    let qrngIndex = 0;
 
-        if (STOP_WORDS.has(cleanWord)) {
-          return '';
-        }
-
-        const stem = getStem(cleanWord);
-        let candidateMatches = [];
-
-        if (selectedDbMode === 'pie') {
-          candidateMatches = findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold);
-        } else if (selectedDbMode === 'latin') {
-          candidateMatches = findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold);
-        } else if (selectedDbMode === 'both') {
-          const pieMatches = hasPIE ? findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold) : [];
-          const latinMatches = hasLatin ? findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold) : [];
-          candidateMatches = pieMatches.concat(latinMatches);
-        }
-
-        // If we found matching candidates, apply your quantum algorithm: arr[QRNG % arr.length]
-        if (candidateMatches.length > 0) {
-          const selectedTranslation = await quantumSelect(candidateMatches);
-          if (selectedTranslation) {
-            return selectedTranslation;
-          }
-        }
-
+    // 2. Process tokens using the single pre-fetched batch
+    const translatedTokens = tokens.map((token) => {
+      if (!token || /^\s+$/.test(token) || /^[^\w\s]+$/.test(token)) {
         return token;
-      })
-    );
+      }
+
+      const cleanWord = token.toLowerCase();
+
+      if (STOP_WORDS.has(cleanWord)) {
+        return '';
+      }
+
+      const stem = getStem(cleanWord);
+      let candidateMatches = [];
+
+      if (selectedDbMode === 'pie') {
+        candidateMatches = findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold);
+      } else if (selectedDbMode === 'latin') {
+        candidateMatches = findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold);
+      } else if (selectedDbMode === 'both') {
+        const pieMatches = hasPIE ? findAllMatches(cleanWord, stem, PIE_DICTIONARY, threshold) : [];
+        const latinMatches = hasLatin ? findAllMatches(cleanWord, stem, LATIN_DICTIONARY, threshold) : [];
+        candidateMatches = pieMatches.concat(latinMatches);
+      }
+
+      // If we found matching candidates, apply your quantum selection using the next number from our single batch
+      if (candidateMatches.length > 0) {
+        const qrngValue = qrngBatch[qrngIndex++] || Math.floor(Math.random() * 10000);
+        const selectedTranslation = quantumSelectFromBatch(candidateMatches, qrngValue);
+        if (selectedTranslation) {
+          return selectedTranslation;
+        }
+      }
+
+      return token;
+    });
 
     const translatedSentence = translatedTokens
       .join('')
