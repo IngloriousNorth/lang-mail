@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lang-Mail</title>
+  <title>Arch.ai</title>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -78,15 +78,17 @@
 <body>
 
   <h2>Lang-Mail</h2>
-  <label for="inputText">[Quantum Jaro-Winkler/PorterStemmer1980 JS AI]:</label>
+  <label for="inputText">[JS Jaro-Winkler Quantum-Index PorterStemmer1980]:</label>
   <textarea id="inputText" placeholder="Type like caveman."></textarea>
 
   <div class="controls">
-    <button id="scanBtn">Pen</button>
+    <button id="scanBtn">Mail.</button>
 
     <!-- Dictionary Selection -->
     <div class="radio-group">
-      <label><input type="radio" name="dbMode" value="pie" checked>Proto-Indo-Aryan</label>
+      <label><input type="radio" name="dbMode" value="pie"> PIE</label>
+      <label><input type="radio" name="dbMode" value="latin"> Latin</label>
+      <label><input type="radio" name="dbMode" value="both" checked> Both</label>
     </div>
 
     <label>
@@ -96,12 +98,11 @@
   </div>
 
   <div id="results">
-    <em>Your Mail awaits...</em>
+    <em>Awaiting your Pen...</em>
   </div>
 
   <!-- Scripts -->
   <script src="./PorterStemmer1980.min.js"></script>
-  <script src="./pickle-surprise.js"></script>
   <script src="./pie.js"></script>
   <script src="./latin.js"></script>
   <script src="./app.js"></script>
